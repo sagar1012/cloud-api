@@ -15,7 +15,7 @@ const cors = require('cors');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
-mongoose.connect('mongodb+srv://cloudlab:CloudLabSit01@cluster0.jz0yxet.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
+mongoose.connect('mongodb+srv://cloudlab:CloudLabSit01@cluster0.jz0yxet.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0').then(() => {
     console.log("Successfully connect to MongoDB.");
 }).catch(err => {
     console.log(err);
@@ -144,7 +144,7 @@ app.put('/page/:pageName', async (req, res) => {
         // Update existing page content
         pageContent.title = title;
         pageContent.description = description;
-
+        
         await pageContent.save();
         res.status(200).json({ message: 'Page content updated successfully' });
     } catch (error) {
@@ -153,7 +153,7 @@ app.put('/page/:pageName', async (req, res) => {
     }
 });
 
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 // Start the server
 app.listen(port, () => {
