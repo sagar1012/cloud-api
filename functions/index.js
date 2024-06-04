@@ -7,7 +7,7 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-const {onRequest} = require("firebase-functions/v2/https");
+const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const functions = require('firebase-functions');
 var express = require('express');
@@ -120,7 +120,7 @@ app.get('/page/:pageName', async (req, res) => {
 // Add or update title and description for a specific page
 app.post('/page/:pageName', async (req, res) => {
     const { pageName } = req.params;
-    const { title, description } = req.body;
+    const { title, title2, description } = req.body;
     try {
         let pageContent = await PageContent.findOne({ page: pageName });
         if (!pageContent) {
@@ -128,11 +128,13 @@ app.post('/page/:pageName', async (req, res) => {
             pageContent = new PageContent({
                 page: pageName,
                 title,
+                title2,
                 description,
             });
         } else {
             // Update existing page content
             pageContent.title = title;
+            pageContent.title2 = title2;
             pageContent.description = description;
         }
         await pageContent.save();
@@ -146,7 +148,7 @@ app.post('/page/:pageName', async (req, res) => {
 // Update title and description for a specific page
 app.put('/page/:pageName', async (req, res) => {
     const { pageName } = req.params;
-    const { title, description } = req.body;
+    const { title, title2, description } = req.body;
     try {
         let pageContent = await PageContent.findOne({ page: pageName });
         if (!pageContent) {
@@ -155,8 +157,9 @@ app.put('/page/:pageName', async (req, res) => {
 
         // Update existing page content
         pageContent.title = title;
+        pageContent.title2 = title2;
         pageContent.description = description;
-        
+
         await pageContent.save();
         res.status(200).json({ message: 'Page content updated successfully' });
     } catch (error) {
@@ -292,10 +295,19 @@ app.delete('/api/job/:id', async (req, res) => {
 
 app.post('/api/jobApplications', upload.single('resume'), async (req, res) => {
     try {
-        const { title, code, phoneNumber, email } = req.body;
+        const { title, code, fullName, phoneNumber, email } = req.body;
         const resume = req.file ? req.file.path : '';
+        const resumeMimeType = req.file ? req.file.mimetype : '';
 
-        const newJobApplication = new JobApplication({ title, code, phoneNumber, email, resume });
+        const newJobApplication = new JobApplication({
+            title,
+            code,
+            fullName,
+            phoneNumber,
+            email,
+            resume,
+            resumeMimeType
+        });
         await newJobApplication.save();
         res.status(200).json({ message: 'Job application created successfully' });
     } catch (err) {
@@ -303,6 +315,29 @@ app.post('/api/jobApplications', upload.single('resume'), async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+
+app.get('/api/jobApplications', async (req, res) => {
+    try {
+        const jobApplications = await JobApplication.find();
+
+        const baseUrl = req.protocol + '://' + req.get('host');
+
+        const jobApplicationsWithFileUrl = jobApplications.map(application => {
+            return {
+                ...application.toObject(),
+                resume: application.resume ? `${baseUrl}/${application.resume.replace(/\\/g, '/')}` : '',
+                resumeMimeType: application.resumeMimeType
+            };
+        });
+
+        res.status(200).json(jobApplicationsWithFileUrl);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 
 function verifyToken(req, res, next) {
     console.log('check token');
