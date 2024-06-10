@@ -1,3 +1,15 @@
+/**
+ * Import function triggers from their respective submodules:
+ *
+ * const {onCall} = require("firebase-functions/v2/https");
+ * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
+ *
+ * See a full list of supported triggers at https://firebase.google.com/docs/functions
+ */
+
+const { onRequest } = require("firebase-functions/v2/https");
+const logger = require("firebase-functions/logger");
+const functions = require('firebase-functions');
 var express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
@@ -15,7 +27,7 @@ const cors = require('cors');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
-mongoose.connect('mongodb+srv://cloudlab:CloudLabSit01@cluster0.jz0yxet.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', { useNewUrlParser: true, useUnifiedTopology: true }).then(() => {
+mongoose.connect('mongodb+srv://cloudlab:CloudLabSit01@cluster0.jz0yxet.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0').then(() => {
     console.log("Successfully connect to MongoDB.");
 }).catch(err => {
     console.log(err);
@@ -108,7 +120,7 @@ app.get('/page/:pageName', async (req, res) => {
 // Add or update title and description for a specific page
 app.post('/page/:pageName', async (req, res) => {
     const { pageName } = req.params;
-    const { title, description } = req.body;
+    const { title, title2, description } = req.body;
     try {
         let pageContent = await PageContent.findOne({ page: pageName });
         if (!pageContent) {
@@ -116,11 +128,13 @@ app.post('/page/:pageName', async (req, res) => {
             pageContent = new PageContent({
                 page: pageName,
                 title,
+                title2,
                 description,
             });
         } else {
             // Update existing page content
             pageContent.title = title;
+            pageContent.title2 = title2;
             pageContent.description = description;
         }
         await pageContent.save();
@@ -134,7 +148,7 @@ app.post('/page/:pageName', async (req, res) => {
 // Update title and description for a specific page
 app.put('/page/:pageName', async (req, res) => {
     const { pageName } = req.params;
-    const { title, description } = req.body;
+    const { title, title2, description } = req.body;
     try {
         let pageContent = await PageContent.findOne({ page: pageName });
         if (!pageContent) {
@@ -143,6 +157,7 @@ app.put('/page/:pageName', async (req, res) => {
 
         // Update existing page content
         pageContent.title = title;
+        pageContent.title2 = title2;
         pageContent.description = description;
 
         await pageContent.save();
@@ -282,8 +297,17 @@ app.post('/api/jobApplications', upload.single('resume'), async (req, res) => {
     try {
         const { title, code, fullName, phoneNumber, email } = req.body;
         const resume = req.file ? req.file.path : '';
+        const resumeMimeType = req.file ? req.file.mimetype : '';
 
-        const newJobApplication = new JobApplication({ title, code, fullName, phoneNumber, email, resume });
+        const newJobApplication = new JobApplication({
+            title,
+            code,
+            fullName,
+            phoneNumber,
+            email,
+            resume,
+            resumeMimeType
+        });
         await newJobApplication.save();
         res.status(200).json({ message: 'Job application created successfully' });
     } catch (err) {
@@ -292,76 +316,28 @@ app.post('/api/jobApplications', upload.single('resume'), async (req, res) => {
     }
 });
 
+
 app.get('/api/jobApplications', async (req, res) => {
     try {
-        const application = await JobApplication.find();
-        res.send(application);
-    } catch (error) {
-        res.status(500).send(error);
+        const jobApplications = await JobApplication.find();
+
+        const baseUrl = req.protocol + '://' + req.get('host');
+
+        const jobApplicationsWithFileUrl = jobApplications.map(application => {
+            return {
+                ...application.toObject(),
+                resume: application.resume ? `${baseUrl}/${application.resume.replace(/\\/g, '/')}` : '',
+                resumeMimeType: application.resumeMimeType
+            };
+        });
+
+        res.status(200).json(jobApplicationsWithFileUrl);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-
-// app.post('/user', [verifyToken], (req, res) => {
-//     const user = new User({
-//         email: req.body.email,
-//         userName: req.body.userName,
-//         password: req.body.password,
-//         firstName: req.body.firstName,
-//         lastName: req.body.lastName
-//     });
-
-//     bcrypt.hash(user.password, 10, function (err, hash) {
-//         if (err) {
-//             return next(err);
-//         }
-//         user.password = hash;
-//         user.token = jwt.sign({ name: 'sagar' }, 'secret',
-//             {
-//                 algorithm: 'HS256',
-//                 allowInsecureKeySizes: true,
-//                 expiresIn: 86400, // 24 hours
-//             });
-//         user.save().then(data => {
-//             res.json({
-//                 data: data,
-//                 status: 200,
-//                 message: 'user successfully added'
-//             });
-//         }).catch(err => {
-//             console.log(err);
-//         })
-//     })
-// })
-
-// app.put('/user', (req, res) => {
-//     User.findOneAndUpdate({ _id: req.query.filter }, req.body, { new: true }).then(data => {
-//         res.json({
-//             data: data,
-//             status: 200,
-//             message: 'user successfully updated'
-//         });
-//     }).catch(err => {
-//         console.log(err);
-//     })
-// })
-
-// app.get('/user', [verifyToken], (req, res) => {
-//     User.find().then(data => {
-//         res.json(data);
-//     });
-// })
-
-// app.delete('/user', (req, res) => {
-//     User.findOneAndDelete({ _id: req.query.filter }).then(data => {
-//         res.json({
-//             status: 200,
-//             message: 'user successfully deleted'
-//         });
-//     }).catch(err => {
-//         console.log(err);
-//     })
-// })
 
 function verifyToken(req, res, next) {
     console.log('check token');
@@ -370,6 +346,15 @@ function verifyToken(req, res, next) {
 
 module.exports = router;
 
+exports.api = functions.https.onRequest(app);
 
 
 
+
+// Create and deploy your first functions
+// https://firebase.google.com/docs/functions/get-started
+
+// exports.helloWorld = onRequest((request, response) => {
+//   logger.info("Hello logs!", {structuredData: true});
+//   response.send("Hello from Firebase!");
+// });
