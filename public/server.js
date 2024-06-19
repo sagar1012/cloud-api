@@ -289,6 +289,22 @@ app.post('/api/jobApplications', upload.single('resume'), async (req, res) => {
         res.status(200).json({ message: 'Job application created successfully' });
     } catch (err) {
         console.error(err);
+
+        if (err.code === 11000) { // Duplicate key error code
+            return res.status(400).json({ error: 'Code already exists' });
+        }
+
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/jobApplications', async (req, res) => {
+
+    try {
+        const jobApplications = await JobApplication.find();
+        res.status(200).json(jobApplications);
+    } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
