@@ -295,43 +295,28 @@ app.delete('/api/job/:id', async (req, res) => {
 
 app.post('/api/jobApplications', upload.single('resume'), async (req, res) => {
     try {
-        const { title, code, fullName, phoneNumber, email } = req.body;
+        const { title, code, phoneNumber, email } = req.body;
         const resume = req.file ? req.file.path : '';
-        const resumeMimeType = req.file ? req.file.mimetype : '';
 
-        const newJobApplication = new JobApplication({
-            title,
-            code,
-            fullName,
-            phoneNumber,
-            email,
-            resume,
-            resumeMimeType
-        });
+        const newJobApplication = new JobApplication({ title, code, phoneNumber, email, resume });
         await newJobApplication.save();
         res.status(200).json({ message: 'Job application created successfully' });
     } catch (err) {
         console.error(err);
+
+        if (err.code === 11000) { // Duplicate key error code
+            return res.status(400).json({ error: 'Code already exists' });
+        }
+
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-
 app.get('/api/jobApplications', async (req, res) => {
+
     try {
         const jobApplications = await JobApplication.find();
-
-        const baseUrl = req.protocol + '://' + req.get('host');
-
-        const jobApplicationsWithFileUrl = jobApplications.map(application => {
-            return {
-                ...application.toObject(),
-                resume: application.resume ? `${baseUrl}/${application.resume.replace(/\\/g, '/')}` : '',
-                resumeMimeType: application.resumeMimeType
-            };
-        });
-
-        res.status(200).json(jobApplicationsWithFileUrl);
+        res.status(200).json(jobApplications);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });

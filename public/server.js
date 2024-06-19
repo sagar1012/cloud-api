@@ -298,7 +298,7 @@ app.post('/api/jobApplications', upload.single('resume'), async (req, res) => {
     }
 });
 
-app.get('/jobApplications', async (req, res) => {
+app.get('/api/jobApplications', async (req, res) => {
 
     try {
         const jobApplications = await JobApplication.find();
