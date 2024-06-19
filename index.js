@@ -283,7 +283,7 @@ app.put('/api/job/:id', async (req, res) => {
     }
 });
 
-// Delete a job post by ID
+// Delete a job post by ID 
 app.delete('/api/job/:id', async (req, res) => {
     try {
         await Job.findByIdAndDelete(req.params.id);
