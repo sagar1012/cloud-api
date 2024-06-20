@@ -295,10 +295,10 @@ app.delete('/api/job/:id', async (req, res) => {
 
 app.post('/api/jobApplications', upload.single('resume'), async (req, res) => {
     try {
-        const { title, code, phoneNumber, email } = req.body;
+        const { title, code, phoneNumber, email, fullName } = req.body;
         const resume = req.file ? req.file.path : '';
 
-        const newJobApplication = new JobApplication({ title, code, phoneNumber, email, resume });
+        const newJobApplication = new JobApplication({ title, code, phoneNumber, email, resume, fullName });
         await newJobApplication.save();
         res.status(200).json({ message: 'Job application created successfully' });
     } catch (err) {
