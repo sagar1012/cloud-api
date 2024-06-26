@@ -20,6 +20,8 @@ const Customer = require('./model/customer');
 const Job = require('./model/job');
 const JobApplication = require('./model/jobApply');
 const PageContent = require('./model/PageContent');
+const Item = require('./model/kioskMenu');
+const path = require('path');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 var app = express();
@@ -43,6 +45,78 @@ app.listen(3000, () => {
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to demo app' });
+});
+
+// Set storage engine
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const dir = './uploads/';
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir);
+        }
+        cb(null, dir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    }
+});
+
+// Check file type
+function checkFileType(file, cb) {
+    const filetypes = /jpeg|jpg|png|gif/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+    if (mimetype && extname) {
+        return cb(null, true);
+    } else {
+        cb('Error: Images Only!');
+    }
+}
+
+// Init upload
+const uploadFile = multer({
+    storage: storage,
+    limits: { fileSize: 1000000 }, // Limit file size to 1MB
+    fileFilter: function (req, file, cb) {
+        checkFileType(file, cb);
+    }
+}).single('image');
+
+// Upload endpoint
+app.post('/upload', (req, res) => {
+    uploadFile(req, res, (err) => {
+        if (err) {
+            res.status(400).json({ error: err });
+        } else {
+            if (req.file == undefined) {
+                res.status(400).json({ error: 'No file selected!' });
+            } else {
+                res.json({
+                    message: 'File uploaded!',
+                    filePath: `/uploads/${req.file.filename}`
+                });
+            }
+        }
+    });
+});
+
+app.post('/kioskmenu', async (req, res) => {
+    try {
+        const item = new Item(req.body);
+        await item.save(); res.status(201).send(item);
+    } catch (err) {
+        res.status(400).send(err);
+    }
+});
+
+// Get all Menuitems
+app.get('/kioskmenu', async (req, res) => {
+    try {
+        const items = await Item.find();
+        res.status(200).send(items);
+    } catch (err) {
+        res.status(500).send(err);
+    }
 });
 
 app.post('/signup', async (req, res) => {
