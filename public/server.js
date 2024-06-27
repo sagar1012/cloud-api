@@ -89,6 +89,8 @@ app.post('/upload', (req, res) => {
     });
 });
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.post('/kioskmenu', async (req, res) => {
     try {
         const item = new Item(req.body);
