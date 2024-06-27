@@ -121,6 +121,19 @@ app.get('/kioskmenu', async (req, res) => {
     }
 });
 
+// Update item
+app.put('/kioskmenu/:id', async (req, res) => {
+    try {
+        const item = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        if (!item) {
+            return res.status(200).send();
+        }
+        res.send(item);
+    } catch (err) {
+        res.status(400).send(err);
+    }
+});
+
 app.post('/signup', async (req, res) => {
     try {
         const { firstname, lastname, email, password } = req.body;
