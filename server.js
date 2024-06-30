@@ -134,6 +134,19 @@ app.put('/kioskmenu/:id', async (req, res) => {
     }
 });
 
+app.delete('/kioskmenu/:id', async (req, res) => {
+    try {
+        const item = await Item.findByIdAndDelete(req.params.id);
+        if (!item) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+        res.json({ message: 'Item deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
 app.post('/signup', async (req, res) => {
     try {
         const { firstname, lastname, email, password } = req.body;
