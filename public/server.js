@@ -13,7 +13,7 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 var app = express();
-const cors = require('cors'); 
+const cors = require('cors');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 const functions = require('firebase-functions');
@@ -120,6 +120,19 @@ app.put('/kioskmenu/:id', async (req, res) => {
         res.send(item);
     } catch (err) {
         res.status(400).send(err);
+    }
+});
+
+app.delete('/kioskmenu/:id', async (req, res) => {
+    try {
+        const item = await Item.findByIdAndDelete(req.params.id);
+        if (!item) {
+            return res.status(404).json({ message: 'Item not found' });
+        }
+        res.json({ message: 'Item deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
 
