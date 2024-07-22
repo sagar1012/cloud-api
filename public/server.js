@@ -9,6 +9,7 @@ const Job = require('./model/job');
 const JobApplication = require('./model/jobApply');
 const PageContent = require('./model/PageContent');
 const Item = require('./model/kioskMenu');
+const Weather = require('./model/weather');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
@@ -75,10 +76,10 @@ const uploadFile = multer({
 app.post('/upload', (req, res) => {
     uploadFile(req, res, (err) => {
         if (err) {
-            res.status(400).json({ error: err });
+            res.status(200).json({ error: err });
         } else {
             if (req.file == undefined) {
-                res.status(400).json({ error: 'No file selected!' });
+                res.status(200).json({ error: 'No file selected!' });
             } else {
                 res.json({
                     message: 'File uploaded!',
@@ -133,6 +134,30 @@ app.delete('/kioskmenu/:id', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+router.post('/weather', async (req, res) => {
+    try {
+        const weather = await Weather.findOneAndUpdate(
+            {}, // Find any document
+            req.body, // Update with the request body
+            { new: true, upsert: true } // Create a new document if none exists
+        );
+        res.status(200).json(weather);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Read the weather entry
+router.get('/weather', async (req, res) => {
+    try {
+        const weather = await Weather.findOne(); // Find the single document
+        if (!weather) return res.status(404).json({ message: 'Weather not found' });
+        res.status(200).json(weather);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
     }
 });
 
