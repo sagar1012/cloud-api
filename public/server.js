@@ -137,7 +137,7 @@ app.delete('/kioskmenu/:id', async (req, res) => {
     }
 });
 
-router.post('/weather', async (req, res) => {
+app.post('/weather', async (req, res) => {
     try {
         const weather = await Weather.findOneAndUpdate(
             {}, // Find any document
@@ -151,7 +151,7 @@ router.post('/weather', async (req, res) => {
 });
 
 // Read the weather entry
-router.get('/weather', async (req, res) => {
+app.get('/weather', async (req, res) => {
     try {
         const weather = await Weather.findOne(); // Find the single document
         if (!weather) return res.status(404).json({ message: 'Weather not found' });
